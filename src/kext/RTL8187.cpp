@@ -1036,8 +1036,13 @@ RTL8187Driver::setProperties(OSObject *properties)
 
 	if (dict == 0)
 		return kIOReturnBadArgument;
+	/* Choosing the network is allowed for root and for the user logged
+	 * in at the console (so the GUI needs no password prompt), but not
+	 * for remote or background users. */
 	if (IOUserClient::clientHasPrivilege(current_task(),
-	    kIOClientPrivilegeAdministrator) != kIOReturnSuccess)
+	    kIOClientPrivilegeAdministrator) != kIOReturnSuccess &&
+	    IOUserClient::clientHasPrivilege(current_task(),
+	    kIOClientPrivilegeLocalUser) != kIOReturnSuccess)
 		return kIOReturnNotPrivileged;
 	if (fGate == 0 || fTerminating)
 		return kIOReturnNoDevice;

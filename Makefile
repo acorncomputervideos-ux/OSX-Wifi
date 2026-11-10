@@ -1,6 +1,7 @@
 # RTL8187L USB wireless driver for Mac OS X 10.3.9 - 10.5 (PowerPC).
 #
-#   make            build the kernel extension and the rtlwifi tool (on a Mac)
+#   make            build the kernel extension, the RTL Wireless application
+#                   and the rtlwifi tool (on a Mac)
 #   make install    install both (run with sudo)
 #   make test       run the driver core's unit tests (any Unix with a C compiler)
 #   make test-ppc   the same tests on an emulated big-endian PowerPC (Linux)
@@ -20,6 +21,7 @@ BUILD ?= build
 
 KEXT  = $(BUILD)/RTL8187.kext
 TOOL  = $(BUILD)/rtlwifi
+APP   = $(BUILD)/RTLWireless.app
 
 CORE_SRC = src/core/rtl8187.c src/core/rtw_sta.c src/core/rtw_aes.c \
            src/core/rtw_sha1.c src/core/rtw_wep.c
@@ -42,7 +44,7 @@ endif
 KOBJS = $(patsubst src/core/%.c,$(BUILD)/k_%.o,$(CORE_SRC)) \
         $(BUILD)/k_RTL8187_info.o $(BUILD)/k_RTL8187.o
 
-all: kext tool
+all: kext tool app
 
 kext: $(KEXT)/Contents/MacOS/RTL8187
 
@@ -71,7 +73,28 @@ $(TOOL): src/tool/rtlwifi.c src/core/rtw_sha1.c $(CORE_HDR)
 	$(CC) -Os -Wall -Isrc/core src/tool/rtlwifi.c src/core/rtw_sha1.c \
 	    -framework IOKit -framework CoreFoundation -o $@
 
+# The application uses only Mac OS X 10.3 APIs.  With an SDK it is built
+# against that SDK so the result runs on 10.3.9 and later.
+ifneq ($(strip $(SDK)),)
+APP_SDKFLAGS = -isysroot $(SDK)
+endif
+APP_SRC = src/app/main.m src/app/AppController.m src/app/RTWDriver.m \
+          src/core/rtw_sha1.c
+
+app: $(APP)/Contents/MacOS/RTLWireless
+
+$(APP)/Contents/MacOS/RTLWireless: $(APP_SRC) $(wildcard src/app/*.h) \
+    src/app/Info.plist $(CORE_HDR)
+	@mkdir -p $(APP)/Contents/MacOS
+	MACOSX_DEPLOYMENT_TARGET=10.3 $(CC) -arch $(ARCH) -Os -Wall \
+	    $(APP_SDKFLAGS) -Isrc/core -Isrc/app $(APP_SRC) \
+	    -framework Cocoa -framework IOKit -framework Security -o $@
+	cp src/app/Info.plist $(APP)/Contents/Info.plist
+	printf 'APPL????' > $(APP)/Contents/PkgInfo
+
 install: all
+	rm -rf "/Applications/RTL Wireless.app"
+	cp -R $(APP) "/Applications/RTL Wireless.app"
 	rm -rf /System/Library/Extensions/RTL8187.kext
 	cp -R $(KEXT) /System/Library/Extensions/
 	chown -R root:wheel /System/Library/Extensions/RTL8187.kext
@@ -84,6 +107,7 @@ install: all
 
 uninstall:
 	rm -rf /System/Library/Extensions/RTL8187.kext /usr/local/bin/rtlwifi
+	rm -rf "/Applications/RTL Wireless.app"
 	rm -f /System/Library/Extensions.kextcache /System/Library/Extensions.mkext
 	touch /System/Library/Extensions
 
@@ -107,4 +131,4 @@ vectors:
 clean:
 	rm -rf $(BUILD)
 
-.PHONY: all kext tool install uninstall test test-ppc vectors clean
+.PHONY: all kext tool app install uninstall test test-ppc vectors clean
