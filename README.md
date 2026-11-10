@@ -25,9 +25,11 @@ A driver for **Realtek RTL8187L** USB Wi-Fi adapters on **Mac OS X 10.3.9
 - Rejoins automatically if the connection drops, and after the adapter
   is unplugged and replugged (or the Mac sleeps) while the driver stays
   loaded.
-- Controlled from Terminal with the bundled `rtlwifi` tool. There is no
-  AirPort menu integration: Apple's AirPort interfaces are private and
-  differ between 10.3, 10.4 and 10.5.
+- Controlled from the **RTL Wireless** application (a window listing
+  the networks in range, with Join and Disconnect) or from Terminal
+  with the `rtlwifi` tool. There is no AirPort menu integration:
+  Apple's AirPort interfaces are private and differ between 10.3, 10.4
+  and 10.5.
 
 Not supported: WPA (TKIP), mixed WPA/WPA2 networks that use TKIP for
 broadcast traffic, WPA3, 802.1X/Enterprise, ad-hoc networks, 802.11n,
@@ -60,7 +62,7 @@ or Xcode 3.x on 10.5, with the **Mac OS X 10.3.9 SDK** installed (an
 optional package in the Xcode 2/3 installers).
 
 ```sh
-make                # builds build/RTL8187.kext and build/rtlwifi
+make                # builds build/RTL8187.kext, build/RTLWireless.app, build/rtlwifi
 sudo make install   # copies them into place
 ```
 
@@ -89,7 +91,21 @@ after plugging in.
 1. Plug in the adapter. Open System Preferences > Network; a new
    Ethernet port should be announced. Leave it on DHCP (or configure it
    as you would a wired port) and apply.
-2. In Terminal:
+2. Open **RTL Wireless** from the Applications folder. It scans as
+   soon as it sees the adapter; select a network and click Join (or
+   double-click it), and type the password if asked. "Other..." joins a
+   network that hides its name.
+
+   With "Remember this network" ticked, the key is stored in your login
+   keychain and the application rejoins that network whenever it is
+   open and the adapter appears. Add it to your Login Items (Accounts
+   preferences) to connect automatically at login. Disconnect also
+   forgets the network.
+
+   Only the user logged in at the Mac's own screen can change the
+   network from the application; other users need `sudo rtlwifi`.
+
+Or, in Terminal:
 
 ```sh
 rtlwifi scan                                   # list networks in range
@@ -105,12 +121,12 @@ sudo rtlwifi rate 11                           # fix the transmit rate; "auto" t
 Once joined, the port shows as connected in Network preferences and
 gets its address by DHCP.
 
-The driver remembers the network only while it stays loaded. To join
-automatically at startup, run the join command from a StartupItem or
-login script; use `-k` with the 64-digit key printed by any WPA key
-calculator to avoid storing the passphrase itself.
+The driver itself remembers the network only while it stays loaded.
+To join at startup without the application, run the join command from
+a StartupItem or login script; use `-k` with the 64-digit key printed
+by any WPA key calculator to avoid storing the passphrase itself.
 
-`sudo make uninstall` removes the driver and the tool.
+`sudo make uninstall` removes the driver, the application and the tool.
 
 ## How it is put together
 
@@ -124,6 +140,8 @@ src/core/   Portable C, no OS dependencies
   rtw_wep.c     RC4, CRC-32
 src/kext/   The kernel extension: IOKit glue between Apple's USB family,
             Apple's networking family, and the core
+src/app/    RTL Wireless, a Cocoa application (Objective-C, interface built
+            in code, Mac OS X 10.3 APIs only)
 src/tool/   rtlwifi command line tool
 tests/      Unit tests for the core, and the Python model that generates
             their expected values
@@ -150,6 +168,8 @@ Verified, on Linux:
 - `src/kext/RTL8187.cpp` passes a compiler syntax and type check against
   Apple's published headers for the 10.3 kernel (xnu-517), IOUSBFamily
   and IONetworkingFamily.
+- The application's source passes a syntax check against GNUstep's
+  implementation of the Cocoa interfaces.
 
 Not verified:
 
@@ -161,6 +181,10 @@ Not verified:
 - The claim that one binary built against the 10.3.9 SDK loads on 10.4
   and 10.5; and the alternative `KPI=1` build against the 10.4 SDK.
 - Unplug, sleep and wake behaviour.
+- The application has never been built with Apple's tools or run, so
+  its window has never been seen on screen; layout and behaviour on
+  10.3, 10.4 and 10.5 are untested, as is the rule that lets the
+  console user control the driver without a password.
 
 If you try it, the system log lines and the output of `rtlwifi status`
 are the most useful things to report.
