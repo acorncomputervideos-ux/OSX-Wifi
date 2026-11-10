@@ -21,7 +21,7 @@ securityName(int security)
 	}
 }
 
-static int
+static NSComparisonResult
 networkCompare(id a, id b, void *context)
 {
 	int sa = [[a objectForKey:@"Signal"] intValue];
@@ -147,9 +147,9 @@ networkCompare(id a, id b, void *context)
 	    NSViewHeightSizable)];
 	table = [[[NSTableView alloc]
 	    initWithFrame:[[scroll contentView] bounds]] autorelease];
-	[self addColumn:@"Name" title:@"Network" width:230];
+	[self addColumn:@"Name" title:@"Network" width:215];
 	[self addColumn:@"Signal" title:@"Signal" width:60];
-	[self addColumn:@"Channel" title:@"Channel" width:60];
+	[self addColumn:@"Channel" title:@"Channel" width:75];
 	[self addColumn:@"Security" title:@"Security" width:100];
 	[table setUsesAlternatingRowBackgroundColors:YES];
 	[table setAllowsMultipleSelection:NO];

@@ -105,6 +105,14 @@ after plugging in.
    Only the user logged in at the Mac's own screen can change the
    network from the application; other users need `sudo rtlwifi`.
 
+   ![Main window](docs/preview-main.png)
+   ![Password panel](docs/preview-password.png)
+
+   These previews are the application's real interface code running on
+   Linux under GNUstep with made-up data. On a Mac the same layout is
+   drawn with Aqua buttons, a title bar and the menu bar at the top of
+   the screen.
+
 Or, in Terminal:
 
 ```sh
